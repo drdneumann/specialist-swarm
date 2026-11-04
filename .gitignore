@@ -1,9 +1,17 @@
-.env
-.coordinator_id
+# Per-person state written by the scripts
 .environment_id
-.last_session_id
-.skill_ids.json
 .specialist_ids.json
+.coordinator_id
+.skill_ids.json
+.last_session_id
+
+# Generated deliverables
 outputs/
+
+# Secrets / local env
+.env
+
+# Python
 __pycache__/
 *.pyc
+.venv/
