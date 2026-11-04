@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Specialist Swarm — Deal Desk Demo</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --purple: #A100FF;
+    --purple-dark: #7500C0;
+    --purple-light: #F5EEFF;
+    --purple-mid: #E6DCFF;
+    --black: #000;
+    --gray-dark: #818180;
+    --gray-light: #CFCFCF;
+    --gray-bg: #F1F1EF;
+    --white: #fff;
+    --green: #2D7D46;
+    --green-bg: #EAF5EE;
+    --amber: #B45309;
+    --amber-bg: #FEF3C7;
+    --blue: #1E40AF;
+    --blue-bg: #EFF6FF;
+  }
+  body {
+    font-family: Arial, sans-serif;
+    background: #0a0a0a;
+    color: #e8e8e8;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+  h1 { font-size: 13px; font-weight: 700; letter-spacing: .12em; color: var(--purple); text-transform: uppercase; margin-bottom: 4px; }
+  h2 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .sub { font-size: 13px; color: #888; }
+  .card {
+    background: #161616;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+  .coord-box {
+    border: 1.5px solid var(--purple);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    background: #1a0030;
+    text-align: center;
+  }
+  .coord-label { font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--purple); text-transform: uppercase; margin-bottom: 6px; }
+  .coord-status { font-size: 15px; font-weight: 600; color: #fff; }
+  .coord-sub { font-size: 12px; color: #888; margin-top: 4px; min-height: 18px; }
+  .agent-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .agent-box {
+    border-radius: 10px;
+    border: 1px solid #2a2a2a;
+    padding: 10px 12px;
+    transition: all .3s;
+    background: #111;
+  }
+  .agent-box.running { border-color: #B45309; background: #1c1200; }
+  .agent-box.done    { border-color: #2D7D46; background: #0a1f0e; }
+  .agent-box.critic  { border-color: #1E40AF; background: #060f2a; }
+  .agent-box.critic.running { border-color: #3B82F6; background: #0c1a3a; }
+  .agent-box.critic.done    { border-color: #2D7D46; background: #0a1f0e; }
+  .agent-label { font-size: 12px; font-weight: 600; color: #ccc; }
+  .agent-model { font-size: 10px; color: #555; margin-top: 1px; }
+  .agent-status { font-size: 10px; color: #666; margin-top: 6px; min-height: 28px; line-height: 1.4; }
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 600;
+    margin-top: 6px;
+  }
+  .badge-idle    { background: #1f1f1f; color: #555; border: 1px solid #333; }
+  .badge-running { background: #1c1200; color: #F59E0B; border: 1px solid #B45309; }
+  .badge-done    { background: #0a1f0e; color: #34D399; border: 1px solid #2D7D46; }
+  .badge-waiting { background: #060f2a; color: #60A5FA; border: 1px solid #1E40AF; }
+  .log-box {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    min-height: 160px;
+    max-height: 200px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #333 transparent;
+  }
+  .log-entry { padding: 3px 0; border-bottom: 1px solid #1a1a1a; display: flex; gap: 8px; align-items: baseline; }
+  .log-entry:last-child { border-bottom: none; }
+  .log-time  { color: #444; min-width: 36px; }
+  .log-event { color: #aaa; }
+  .log-entry.spawn .log-event  { color: #F59E0B; }
+  .log-entry.reply .log-event  { color: #34D399; }
+  .log-entry.critic-ev .log-event { color: #60A5FA; }
+  .log-entry.synth .log-event  { color: var(--purple); }
+  .log-entry.verdict .log-event { color: #34D399; font-weight: 700; }
+  .output-block {
+    background: #0d0d0d;
+    border-radius: 8px;
+    border: 1px solid #222;
+    padding: 10px 14px;
+    font-size: 11px;
+    line-height: 1.6;
+    color: #777;
+    min-height: 160px;
+  }
+  .stat-num { font-size: 26px; font-weight: 700; color: #fff; }
+  .stat-label { font-size: 11px; color: #555; margin-top: 2px; }
+  .btn {
+    background: transparent;
+    border: 1px solid #333;
+    color: #aaa;
+    font-size: 12px;
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+    transition: all .15s;
+  }
+  .btn:hover { border-color: var(--purple); color: var(--purple); }
+  .btn-primary { background: var(--purple); border-color: var(--purple); color: #fff; }
+  .btn-primary:hover { background: var(--purple-dark); border-color: var(--purple-dark); color: #fff; }
+  .section-label { font-size: 10px; font-weight: 700; letter-spacing: .1em; color: #444; text-transform: uppercase; margin-bottom: 10px; }
+  .critic-verdict {
+    display: none;
+    background: #0a1f0e;
+    border: 1px solid #2D7D46;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #34D399;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+  .gap { display: flex; flex-direction: column; gap: 12px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+</style>
+</head>
+<body>
+
+<div style="max-width:1100px;margin:0 auto;">
+
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem">
+    <div>
+      <h1>Accenture — Specialist Swarm</h1>
+      <h2>Deal Desk Live Demo</h2>
+      <p class="sub">Acme Corp RFP · Enterprise data platform · $820K Y1 · S2+S4 active</p>
+    </div>
+    <div style="display:flex;gap:8px;padding-top:4px">
+      <button class="btn" onclick="resetDemo()">Reset</button>
+      <button class="btn btn-primary" onclick="startDemo()">Run swarm ▶</button>
+    </div>
+  </div>
+
+  <div class="gap">
+
+    <div class="coord-box">
+      <div class="coord-label">Coordinator · Claude Opus · S4 explicit parallelism</div>
+      <div class="coord-status" id="coord-status">Waiting for RFP...</div>
+      <div class="coord-sub" id="coord-sub"></div>
+    </div>
+
+    <div class="agent-grid">
+      <div class="agent-box" id="box-pricing">
+        <div class="agent-label">Pricing</div>
+        <div class="agent-model">Sonnet · pricing-playbook</div>
+        <div class="agent-status" id="st-pricing">idle</div>
+        <span class="badge badge-idle" id="badge-pricing">—</span>
+      </div>
+      <div class="agent-box" id="box-legal">
+        <div class="agent-label">Legal</div>
+        <div class="agent-model">Sonnet · legal-checklist</div>
+        <div class="agent-status" id="st-legal">idle</div>
+        <span class="badge badge-idle" id="badge-legal">—</span>
+      </div>
+      <div class="agent-box" id="box-tech">
+        <div class="agent-label">Technical fit</div>
+        <div class="agent-model">Sonnet · product-overview</div>
+        <div class="agent-status" id="st-tech">idle</div>
+        <span class="badge badge-idle" id="badge-tech">—</span>
+      </div>
+      <div class="agent-box" id="box-comp">
+        <div class="agent-label">Competitive</div>
+        <div class="agent-model">Haiku · competitive-intel</div>
+        <div class="agent-status" id="st-comp">idle</div>
+        <span class="badge badge-idle" id="badge-comp">—</span>
+      </div>
+      <div class="agent-box critic" id="box-critic">
+        <div class="agent-label" style="color:#60A5FA">Critic</div>
+        <div class="agent-model" style="color:#334">Opus · adversarial review</div>
+        <div class="agent-status" id="st-critic">awaiting draft</div>
+        <span class="badge badge-idle" id="badge-critic">S2</span>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <div class="section-label">Event stream</div>
+        <div class="log-box" id="log"></div>
+      </div>
+      <div class="card">
+        <div class="section-label">Coordinator synthesis</div>
+        <div class="output-block" id="output-block">Waiting for all specialists to report in...</div>
+        <div class="critic-verdict" id="critic-verdict"></div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="card" style="text-align:center"><div class="stat-num" id="s-threads">0</div><div class="stat-label">threads spawned</div></div>
+      <div class="card" style="text-align:center"><div class="stat-num" id="s-replies">0</div><div class="stat-label">specialist replies</div></div>
+      <div class="card" style="text-align:center"><div class="stat-num" id="s-critic">—</div><div class="stat-label">critic verdict</div></div>
+      <div class="card" style="text-align:center"><div class="stat-num" id="s-elapsed">0s</div><div class="stat-label">elapsed</div></div>
+      <div class="card" style="text-align:center"><div class="stat-num" id="s-output" style="font-size:16px">—</div><div class="stat-label">deliverable</div></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const agents = [
+  { id:'pricing', label:'Pricing Specialist',   model:'Sonnet', reply:'$820K Y1 · 22% disc · Net 60 · 90-day term' },
+  { id:'legal',   label:'Legal Reviewer',        model:'Sonnet', reply:'6 flags · liability cap · IP licence-back · 1 audit/yr' },
+  { id:'tech',    label:'Technical Fit',          model:'Sonnet', reply:'High fit · 80K events/s covered · Power BI native' },
+  { id:'comp',    label:'Competitive Intel',      model:'Haiku',  reply:'Lead on TCO + anti-lock-in vs Databricks/Snowflake' },
+];
+
+const steps = [
+  { t:400,  fn: () => setCoord('Reading RFP...', 'Acme Corp · 280 TB · 80K events/s · Azure IoT · 600 Power BI users') },
+  { t:1300, fn: () => setCoord('Fanning out to all four specialists in a single message →', 'S4: explicit parallel delegation') },
+  { t:1700, fn: () => spawnAll() },
+  { t:2000, fn: () => runAgent('pricing') },
+  { t:2060, fn: () => runAgent('legal') },
+  { t:2120, fn: () => runAgent('tech') },
+  { t:2180, fn: () => runAgent('comp') },
+  { t:5000, fn: () => replyAgent('comp') },
+  { t:6600, fn: () => replyAgent('pricing') },
+  { t:7400, fn: () => replyAgent('tech') },
+  { t:8800, fn: () => replyAgent('legal') },
+  { t:9100, fn: () => setCoord('All four in. Reconciling conflicts, drafting proposal...', 'Pricing 22% holds over Competitive 28-32% · Net 60 wins · Applying Accenture Voice') },
+  { t:11200,fn: () => synthesise() },
+  { t:12000,fn: () => sendToCritic() },
+  { t:14500,fn: () => criticVerdict() },
+  { t:15200,fn: () => finalise() },
+];
+
+let timers = [], startTs = null, elapsedInt = null;
+
+function log(msg, cls='') {
+  const el = document.getElementById('log');
+  const t = startTs ? (Date.now()-startTs)/1000 : 0;
+  el.insertAdjacentHTML('beforeend',
+    `<div class="log-entry ${cls}"><span class="log-time">${t.toFixed(1)}s</span><span class="log-event">${msg}</span></div>`);
+  el.scrollTop = el.scrollHeight;
+}
+
+function setCoord(main, sub='') {
+  document.getElementById('coord-status').textContent = main;
+  document.getElementById('coord-sub').textContent = sub;
+}
+
+function setBadge(id, state, text) {
+  document.getElementById('badge-'+id).className = 'badge badge-'+state;
+  document.getElementById('badge-'+id).textContent = text;
+  const box = document.getElementById('box-'+id);
+  box.className = 'agent-box' + (id==='critic' ? ' critic' : '') + ' ' + state;
+}
+
+function spawnAll() {
+  let n = 0;
+  agents.forEach(a => {
+    document.getElementById('st-'+a.id).textContent = 'spawning...';
+    setBadge(a.id, 'waiting', 'spawning');
+    log(`[thread spawned]   ${a.label}`, 'spawn');
+    document.getElementById('s-threads').textContent = ++n + 4 - 4 + parseInt(document.getElementById('s-threads').textContent||0) + 1 - 1;
+  });
+  document.getElementById('s-threads').textContent = 4;
+}
+
+function runAgent(id) {
+  const a = agents.find(x=>x.id===id);
+  document.getElementById('st-'+id).textContent = `running · ${a.model}`;
+  setBadge(id, 'running', 'running');
+  log(`[thread running]   ${a.label}`);
+}
+
+function replyAgent(id) {
+  const a = agents.find(x=>x.id===id);
+  document.getElementById('st-'+id).textContent = a.reply;
+  setBadge(id, 'done', '✓');
+  log(`[reply ←]          ${a.label}`, 'reply');
+  const r = parseInt(document.getElementById('s-replies').textContent)||0;
+  document.getElementById('s-replies').textContent = r+1;
+}
+
+function synthesise() {
+  document.getElementById('output-block').innerHTML =
+    '<b style="color:#ccc">Conflicts reconciled:</b><br>' +
+    '· Discount: 22% (playbook) over Competitive\'s 28-32% suggestion<br>' +
+    '· Payment: Net 60 (Pricing/precedent) over Legal\'s Net 45<br>' +
+    '· Termination: 90-day notice (Legal) over Pricing\'s 180-day<br>' +
+    '· 99.99% SLA premium: $100K explicit line item (all specialists aligned)<br><br>' +
+    '<b style="color:#ccc">Draft complete.</b> Sending to Critic for adversarial review...';
+  log('[synthesis]        Coordinator assembling draft proposal', 'synth');
+}
+
+function sendToCritic() {
+  setCoord('Draft complete — consulting Deal Desk Critic (S2)...', 'Adversarial review before finalising');
+  document.getElementById('st-critic').textContent = 'reviewing draft...';
+  setBadge('critic', 'running', 'reviewing');
+  document.getElementById('box-critic').className = 'agent-box critic running';
+  log('[delegate →]       Deal Desk Critic', 'critic-ev');
+  log('[thread running]   Deal Desk Critic · Claude Opus', 'critic-ev');
+}
+
+function criticVerdict() {
+  document.getElementById('st-critic').textContent = 'VERDICT: SHIP IT';
+  setBadge('critic', 'done', '✓ SHIP IT');
+  document.getElementById('box-critic').className = 'agent-box critic done';
+  log('[reply ←]          Deal Desk Critic', 'reply');
+  log('VERDICT: SHIP IT — commercial terms defensible, technical fit solid, legal counters market-standard', 'verdict');
+  document.getElementById('s-critic').textContent = '✓';
+  document.getElementById('s-critic').style.color = '#34D399';
+  const v = document.getElementById('critic-verdict');
+  v.style.display = 'block';
+  v.textContent = 'VERDICT: SHIP IT — Commercial terms are defensible and playbook-backed. Technical fit is unambiguous. Legal counters are market-standard. Send it.';
+}
+
+function finalise() {
+  setCoord('✓ Proposal finalised — proposal-response.html ready', 'Accenture Voice · Critic-approved · Full conflict reconciliation');
+  document.getElementById('s-output').textContent = '.html';
+  document.getElementById('s-output').style.color = '#A100FF';
+  log('[output]           proposal-response.html written to outputs/', 'synth');
+}
+
+function tick() {
+  if (!startTs) return;
+  document.getElementById('s-elapsed').textContent = ((Date.now()-startTs)/1000).toFixed(1)+'s';
+}
+
+function resetDemo() {
+  timers.forEach(clearTimeout); timers = [];
+  clearInterval(elapsedInt); elapsedInt = null; startTs = null;
+  setCoord('Waiting for RFP...', '');
+  document.getElementById('log').innerHTML = '';
+  document.getElementById('output-block').textContent = 'Waiting for all specialists to report in...';
+  document.getElementById('critic-verdict').style.display = 'none';
+  ['s-threads','s-replies'].forEach(id => document.getElementById(id).textContent = '0');
+  document.getElementById('s-critic').textContent = '—';
+  document.getElementById('s-critic').style.color = '';
+  document.getElementById('s-elapsed').textContent = '0s';
+  document.getElementById('s-output').textContent = '—';
+  document.getElementById('s-output').style.color = '';
+  agents.forEach(a => {
+    document.getElementById('st-'+a.id).textContent = 'idle';
+    setBadge(a.id, 'idle', '—');
+  });
+  document.getElementById('st-critic').textContent = 'awaiting draft';
+  document.getElementById('badge-critic').className = 'badge badge-idle';
+  document.getElementById('badge-critic').textContent = 'S2';
+  document.getElementById('box-critic').className = 'agent-box critic';
+}
+
+function startDemo() {
+  resetDemo();
+  startTs = Date.now();
+  elapsedInt = setInterval(tick, 100);
+  steps.forEach(s => { timers.push(setTimeout(s.fn, s.t)); });
+  log('RFP received — starting deal desk swarm');
+}
+</script>
+</body>
+</html>
