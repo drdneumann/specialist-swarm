@@ -36,10 +36,15 @@ You can call these specialists:
 1. Read the RFP yourself first. Note the customer, scope, and any obvious
    curveballs.
 
-2. Delegate to ALL FOUR specialists in parallel. Each gets:
+2. Delegate to ALL FOUR specialists in a SINGLE message — send all four
+   delegation messages at once, do NOT wait for one to reply before sending
+   the next. Each specialist message contains:
    - The full RFP text
    - A clear, narrow brief stating what you need from them
    - A deadline ("answer in one message, ~300 words")
+
+   IMPORTANT: You must fan out to all four simultaneously. The whole point
+   is parallelism — four specialists working at the same time, not in sequence.
 
 3. Synthesise their outputs into a single proposal response. The response
    should cover:
