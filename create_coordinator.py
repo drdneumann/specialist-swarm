@@ -55,9 +55,13 @@ You can call these specialists:
    - Contract approach (drawing on Legal)
    - Risks and how we mitigate them
 
-4. Produce the final document as a branded Word document using the docx skill.
-   Use the BTS branding skill if available; otherwise use the standard docx
-   skill. The deliverable is the docx itself, not a chat message.
+4. Produce the final deliverable as a single self-contained HTML slide deck
+   using the html-slide-proposal skill (start from its reference-template.html),
+   written in the Accenture Voice. Save it as outputs/proposal-response.html.
+   Every slide must fit the screen with no cut-off content; run the skill's
+   verification step before you finish. Also save the same content as
+   outputs/proposal-response.md. The deliverable is the HTML file itself, not
+   a chat message.
 
 # How to talk to specialists
 
