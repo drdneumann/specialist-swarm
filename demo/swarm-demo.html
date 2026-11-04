@@ -268,14 +268,12 @@ function setBadge(id, state, text) {
 }
 
 function spawnAll() {
-  let n = 0;
   agents.forEach(a => {
     document.getElementById('st-'+a.id).textContent = 'spawning...';
     setBadge(a.id, 'waiting', 'spawning');
     log(`[thread spawned]   ${a.label}`, 'spawn');
-    document.getElementById('s-threads').textContent = ++n + 4 - 4 + parseInt(document.getElementById('s-threads').textContent||0) + 1 - 1;
   });
-  document.getElementById('s-threads').textContent = 4;
+  document.getElementById('s-threads').textContent = agents.length;
 }
 
 function runAgent(id) {
@@ -332,6 +330,9 @@ function finalise() {
   document.getElementById('s-output').textContent = '.html';
   document.getElementById('s-output').style.color = '#A100FF';
   log('[output]           proposal-response.html written to outputs/', 'synth');
+  tick();
+  clearInterval(elapsedInt);
+  elapsedInt = null;
 }
 
 function tick() {
