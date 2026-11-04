@@ -25,6 +25,9 @@ SKILL_TO_SPECIALIST = {
     "competitive-intel": "competitive",
 }
 
+# Skills attached to the coordinator (not specialists)
+COORDINATOR_SKILLS = ["accenture-voice"]
+
 
 def main() -> None:
     if not os.environ.get("ANTHROPIC_API_KEY"):
@@ -77,7 +80,7 @@ def main() -> None:
         current = client.beta.agents.retrieve(specialist_id)
         # Avoid duplicate attachment on re-run
         already_attached = any(
-            s.get("skill_id") == skill_id for s in (current.skills or [])
+            getattr(s, "skill_id", None) == skill_id for s in (current.skills or [])
         )
         if already_attached:
             print(f"  already attached ✓ (skipping)")
@@ -93,8 +96,50 @@ def main() -> None:
         )
         print(f"  attached ✓")
 
+    # Attach coordinator-level skills (e.g. accenture-voice)
+    coordinator_id_path = Path(".coordinator_id")
+    if coordinator_id_path.exists() and COORDINATOR_SKILLS:
+        coordinator_id = coordinator_id_path.read_text().strip()
+        print(f"\nAttaching coordinator skills to {coordinator_id}...")
+        for skill_name in COORDINATOR_SKILLS:
+            skill_dir = Path("skills") / skill_name
+            if not (skill_dir / "SKILL.md").exists():
+                print(f"  Skipping {skill_name} — no SKILL.md found")
+                continue
+
+            display_title = skill_name.replace("-", " ").title()
+            if display_title in existing_by_title:
+                skill_id = existing_by_title[display_title]
+                print(f"  Reusing existing skill: {skill_name} ({skill_id})")
+            else:
+                print(f"  Uploading skill: {skill_name}...")
+                skill = client.beta.skills.create(
+                    display_name=display_title,
+                    files=files_from_dir(str(skill_dir)),
+                )
+                skill_id = skill.id
+                print(f"  -> {skill_id}")
+            uploaded[skill_name] = skill_id
+
+            current = client.beta.agents.retrieve(coordinator_id)
+            already_attached = any(
+                getattr(s, "skill_id", None) == skill_id for s in (current.skills or [])
+            )
+            if already_attached:
+                print(f"  already attached to coordinator ✓ (skipping)")
+                continue
+            new_skills = list(current.skills or []) + [
+                {"type": "custom", "skill_id": skill_id, "version": "latest"}
+            ]
+            client.beta.agents.update(
+                coordinator_id,
+                version=current.version,
+                skills=new_skills,
+            )
+            print(f"  attached to coordinator ✓")
+
     Path(".skill_ids.json").write_text(json.dumps(uploaded, indent=2))
-    print(f"\nUploaded {len(uploaded)} skills and attached them to specialists.")
+    print(f"\nUploaded {len(uploaded)} skills total.")
     print("Next: python run_deal_desk.py")
 
 

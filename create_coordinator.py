@@ -54,6 +54,13 @@ You can call these specialists:
    Use the BTS branding skill if available; otherwise use the standard docx
    skill. The deliverable is the docx itself, not a chat message.
 
+   Before writing, apply the accenture-voice skill to your draft:
+   - Lead every section with the business outcome, not the activity
+   - "What this means for you" after every recommendation
+   - Active voice, sentences under 25 words
+   - No hedging ("we believe", "we feel", "potentially")
+   - Use Accenture brand anchors: Reinvention, compressed transformation, human + machine
+
 # How to talk to specialists
 
 When delegating, be direct: "Pricing Specialist: for this RFP, recommend
