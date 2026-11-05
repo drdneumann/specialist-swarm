@@ -77,19 +77,17 @@ def main() -> None:
         current = client.beta.agents.retrieve(specialist_id)
         # Avoid duplicate attachment on re-run
         already_attached = any(
-            s.get("skill_id") == skill_id for s in (current.skills or [])
+            getattr(s, "skill_id", None) == skill_id for s in (current.skills or [])
         )
         if already_attached:
             print(f"  already attached ✓ (skipping)")
             continue
 
-        new_skills = list(current.skills or []) + [
-            {"type": "custom", "skill_id": skill_id, "version": "latest"}
-        ]
+        attached = [s.model_dump(exclude_none=True) for s in (current.skills or [])]
         client.beta.agents.update(
             specialist_id,
             version=current.version,
-            skills=new_skills,
+            skills=attached + [{"type": "custom", "skill_id": skill_id, "version": "latest"}],
         )
         print(f"  attached ✓")
 

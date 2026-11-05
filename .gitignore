@@ -1,5 +1,6 @@
 .env
 .coordinator_id
+.critic_id
 .environment_id
 .last_session_id
 .skill_ids.json
